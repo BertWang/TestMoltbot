@@ -2,10 +2,55 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 1. 資料夾/專案 (用於分類筆記)
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String   // 多用戶擴充預留 (目前可設為 default "user")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  notes       Note[]   // 關聯：一個資料夾有多個筆記
+}
+
+// 2. 筆記本體
+model Note {
+  id             String   @id @default(cuid())
+
+  // 檔案資訊
+  imageUrl       String   // 圖片存放路徑 (如果是本地開發，可能是 public/uploads/...)
+  fileKey        String?  // 用於雲端儲存的 Key (選配)
+
+  // A. 第一階段：原始辨識 (OCR)
+  rawOcrText     String?  // 原始 OCR 結果 (尚未清理，可能含錯字)
+  ocrProvider    String?  // 例如: "gemini-flash", "tesseract", "azure"
+  
+  // B. 第二階段：語意清理與核對 (AI Cleaning)
+  refinedContent String?  // 經 AI 修正錯別字、手寫誤判後的最終 Markdown
+  confidence     Float?   // AI 對辨識結果的信心分數 (0.0 - 1.0)
+  
+  // C. 第三階段：歸檔 (Classification)
+  summary        String?  // AI 自動生成的摘要
+  tags           String   // 標籤 (SQLite 不支援 String[]，使用逗號分隔字串儲存，如 "tag1,tag2")
+
+  // 狀態管理
+  status         String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  errorMessage   String?  // 若失敗，記錄原因
+
+  // 關聯
+  collectionId   String?
+  collection     Collection? @relation(fields: [collectionId], references: [id])
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

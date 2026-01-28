@@ -18,8 +18,8 @@
 ### 邏輯分層
 * **展示層 (Presentation Layer)**: Next.js (React Server Components + Client Components)。
 * **服務層 (Service Layer)**: Next.js Server Actions (作為 API Gateway) + 異步任務隊列 (Job Queue)。
-* **數據層 (Data Layer)**: PostgreSQL (元數據) + Object Storage (圖片實體)。
-* **AI 處理層 (Processing Layer)**: OCR Provider (Azure/Google) + LLM Provider (OpenAI)。
+* **數據層 (Data Layer)**: PostgreSQL/SQLite (元數據) + Object Storage (圖片實體)。
+* **AI 處理層 (Processing Layer)**: OCR Provider (Gemini 2.0 Flash) + LLM Provider (Gemini)。
 
 ***
 
@@ -30,124 +30,89 @@
 1. **用戶動作**：在前端拖曳上傳 10 張筆記圖片。
 2. **前端處理**：
    * 產生臨時預覽圖 (Thumbnail)。
-   * 檢查檔案大小與格式。
+   * 檢查檔案大小與格式 (支援 JPG/PNG/PDF)。
 3. **後端接收 (Server Action)**：
-   * 將圖片上傳至 **Cloudflare R2 (Object Storage)**。
-   * 在資料庫 `Note` 表中建立 10 筆記錄，狀態設為 `PENDING`。
-   * **觸發事件**：發送 `process.note` 事件至任務隊列 (Inngest/Trigger.dev)。
+   * 將圖片上傳至本地或雲端儲存 (`/uploads`)。
+   * 在資料庫 `Note` 表中建立記錄，狀態設為 `PENDING`。
+   * **觸發事件**：啟動 AI 處理流程。
    * **立即回應**：告知前端「上傳成功，開始處理」，UI 顯示進度條。
 
-### 階段二：處理 (Processing - Background Worker)
-此階段在背景執行，用戶無需在此頁面等待。
+### 階段二：處理 (Processing - AI Pipeline)
+1. **任務 A：多模態識別 (Gemini 2.0 Flash)**
+   * 輸入圖片與 Prompt。
+   * 執行 OCR (文字辨識) + 語意修正 (Markdown 格式化) + 自動摘要 + 標籤生成。
+   * 產出 JSON 格式結果。
 
-1. **任務 A：視覺辨識 (OCR)**
-   * Worker 監聽到 `process.note`。
-   * 呼叫 Azure AI Document Intelligence API。
-   * 獲取原始文字 (Raw Text) 與段落座標。
-   * *存檔*：更新 DB `raw_ocr_text` 欄位。
-
-2. **任務 B：語意重構 (LLM Refinement)**
-   * 將 raw_ocr_text 發送至 **GPT-4o-mini**。
-   * **Prompt 指令**：「你是一個筆記整理助手。請修正以下 OCR 文字的錯別字、標點與排版，並輸出為標準 Markdown。請自動偵測內容主題，生成 3 個相關標籤 (Tags)。」
-   * *存檔*：更新 DB `refined_content` 與 `tags` 欄位。
-
-3. **狀態更新**：將 DB 狀態更新為 `COMPLETED`。
+2. **任務 B：資料清洗與儲存**
+   * 解析 JSON，寫入 `Note` 資料表的 `rawOcrText` (原始), `refinedContent` (修正後), `tags`, `summary` 欄位。
+   * 計算 `confidence` 信心分數。
+   * 狀態更新為 `COMPLETED`。
 
 ### 階段三：展示與歸檔 (Presentation)
 1. **用戶回訪**：用戶進入 Dashboard。
 2. **數據獲取**：Server Component 讀取 DB，顯示已完成的筆記列表。
-3. **雙欄校對**：用戶點擊筆記，左側看原圖，右側編輯 Markdown。
+3. **雙欄校對 (Split Editor)**：用戶點擊筆記，左側看原圖 (支援縮放)，右側編輯 Markdown (支援即時預覽)。
 
 ***
 
 ## 4. 資料庫模型設計 (Schema Design)
 使用 Prisma 定義，確保資料關聯性。
 
-```prisma
-// 核心模型設計
-
-// 1. 資料夾/專案 (用於分類筆記)
-model Collection {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  userId      String   // 多用戶擴充預留
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  notes       Note[]   // 關聯：一個資料夾有多個筆記
-}
-
-// 2. 筆記本體
-model Note {
-  id             String   @id @default(cuid())
-
-  // 檔案資訊
-  imageUrl       String   // R2/S3 的公開 URL
-  fileKey        String   // 用於刪除檔案的 Key
-
-  // 處理內容
-  rawOcrText     String?  @db.Text  // 原始 OCR 結果 (除錯用)
-  refinedContent String?  @db.Text  // AI 修正後的 Markdown (顯示用)
-  summary        String?            // AI 自動生成的摘要 (選配)
-  tags           String[]           // AI 自動生成的標籤
-
-  // 狀態管理
-  status         NoteStatus @default(PENDING)
-  errorMessage   String?            // 若失敗，記錄原因
-
-  // 關聯
-  collectionId   String?
-  collection     Collection? @relation(fields: [collectionId], references: [id])
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-// 狀態枚舉
-enum NoteStatus {
-  PENDING     // 等待處理
-  PROCESSING  // OCR/AI 運算中
-  COMPLETED   // 完成
-  FAILED      // 失敗 (如圖片模糊、API 錯誤)
-}
-```
+*(參考 `prisma/schema.prisma` 實作檔案)*
 
 ***
 
-## 5. 功能模組開發清單
+## 5. 前端設計規範 (Design System: Digital Zen)
+結合「frontend-design」與「ui-ux-pro-max」技能，採用 "Digital Zen" 設計語言。
+
+* **核心風格 (Tone)**: **Organic & Refined (有機與精緻)**。結合傳統紙張的質感與現代科技的俐落。
+* **色彩系統 (Colors)**: 
+    * `Stone`: 暖灰基底，減少視覺疲勞。
+    * `Paper White`: 內容區塊背景。
+    * `Ink Black`: 文字主要顏色。
+    * `Accent`: 來自 "AI" 的螢光提示色 (用於標籤或狀態)。
+* **排版 (Typography)**: 
+    * 標題：襯線體 (Serif) - 營造閱讀筆記的經典感。
+    * 內文：無襯線體 (Sans) - 確保數位閱讀的清晰度。
+* **佈局 (Layout)**: 
+    * **AppSidebar**: 全局左側導航。
+    * **Split View**: 核心編輯體驗，左圖右文。
+
+***
+
+## 6. 功能模組開發清單與狀態
 
 ### A. 基礎建設 (Infrastructure)
-- [ ] **Storage Service**: 封裝上傳/刪除邏輯 (S3 Client)。
-- [ ] **DB Service**: Prisma Client 初始化與 CRUD 封裝。
-- [ ] **Queue Service**: 設定 Inngest 或 Trigger.dev 的環境變數與 Client。
+- [x] **Project Init**: Next.js 15, TypeScript, Tailwind v4。
+- [x] **DB Service**: Prisma + SQLite 初始化完成。
+- [x] **AI Core**: Google Gemini 2.0 Flash 串接完成 (`src/lib/gemini.ts`)。
+- [x] **Testing**: End-to-End 流程測試通過 (`scripts/test-pipeline.ts`)。
 
 ### B. 核心功能 (Core Features)
-- [ ] **Upload Action**: 處理 Multipart/form-data，驗證檔案，寫入 DB。
-- [ ] **OCR Worker**: 串接 Azure/Google Vision API，處理 Retry 機制。
-- [ ] **AI Worker**: 串接 OpenAI API，編寫 System Prompt (提示詞工程)。
+- [ ] **Upload Action**: 處理圖片上傳與資料庫寫入。
+- [ ] **AI Integration**: 將測試過的 AI 腳本整合進 Next.js API Route。
+- [ ] **Calibration Mode**: 實作「原文對照」與「手動校正」功能。
 
 ### C. 前端介面 (UI Components)
-- [ ] **CollectionSidebar**: 側邊欄導航 (Server Component)。
-- [ ] **UploadZone**: 支援拖曳、預覽、進度顯示的 Client Component。
-- [ ] **NoteListTable**: 支援搜尋、篩選狀態的資料表格。
-- [ ] **SplitEditor**: 左圖右文的編輯器 (推薦使用 `@mdxeditor/editor` 或 tiptap)。
+- [x] **UI Lib**: shadcn/ui 安裝完成 (Sidebar, Button, Input, etc.)。
+- [ ] **AppLayout**: 實作數位禪意風格的主佈局。
+- [ ] **UploadZone**: 支援拖曳、預覽的互動區塊。
+- [ ] **Dashboard**: 筆記列表與狀態管理。
+- [ ] **SplitEditor**: 雙欄校對編輯器。
 
 ***
 
-## 6. 開發流程建議 (Roadmap)
-1. **Phase 1: 骨架搭建**
-   * 完成 Prisma Schema 定義。
-   * 實作「圖片上傳至 R2 並寫入 DB」的最小可行性路徑 (MVP)。
-2. **Phase 2: 處理核心**
-   * 串接 OCR API，先在 Server Action 中同步執行 (測試用)。
-   * 引入 Queue 機制，將 OCR 轉為異步背景執行。
-3. **Phase 3: AI 賦能**
-   * 加入 LLM 修正層。
-   * 優化 Prompt，確保 Markdown 格式穩定。
-4. **Phase 4: 介面完善**
-   * 實作 Dashboard 與 SplitEditor。
-   * 加入搜尋與分類功能。
+## 7. 開發流程建議 (Roadmap)
+1. **Phase 1: 骨架搭建 (已完成)**
+   * 專案初始化、DB 建置、AI 核心測試。
+2. **Phase 2: 前端實作 (進行中)**
+   * 實作 AppSidebar, Dashboard, UploadZone。
+   * 確認 UI 風格符合 "Digital Zen"。
+3. **Phase 3: 整合與互動**
+   * 串接前端上傳至後端 AI 處理。
+   * 實作即時狀態更新。
+4. **Phase 4: 優化與完善**
+   * 引入校對模式 (Calibration)。
+   * 增加搜尋、分類、標籤管理。
 
-這份規劃將複雜的「AI 筆記識別」拆解為可執行的工程步驟，確保你在開發時不會迷失方向。
+這份規劃書將隨著開發進度持續更新，作為專案進化的依據。

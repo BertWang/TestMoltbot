@@ -18,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils'; // 引入 cn 輔助函數
 
 interface Note {
   id: string;
@@ -143,10 +144,10 @@ export function NotesListClient({ allNotes }: { allNotes: Note[] }) {
       )}
 
       {allNotes.length === 0 ? (
-        <div className="text-center py-12 bg-stone-100/50 rounded-xl border border-dashed border-stone-200">
-          <p className="text-stone-400 text-sm">目前沒有任何筆記。點擊左側導航的「儀表板」上傳第一張圖片吧！</p>
+        <div className="text-center py-12 bg-stone-100/50 rounded-xl border border-dashed border-stone-200 flex flex-col items-center justify-center">
+          <p className="text-stone-400 text-sm mb-6">目前沒有任何筆記。點擊左側導航的「儀表板」上傳第一張圖片吧！</p>
           <Link href="/">
-            <button className="mt-6 group flex items-center justify-center gap-2 bg-stone-900 text-stone-50 py-2.5 px-6 rounded-md hover:bg-stone-800 active:scale-[0.98] transition-all shadow-sm hover:shadow-md">
+            <button className="group flex items-center justify-center gap-2 bg-stone-900 text-stone-50 py-2.5 px-6 rounded-md hover:bg-stone-800 active:scale-[0.98] transition-all shadow-sm hover:shadow-md">
               <PlusCircle className="w-4 h-4 text-stone-400 group-hover:text-white transition-colors" />
               <span className="text-sm font-medium">前往儀表板上傳</span>
             </button>

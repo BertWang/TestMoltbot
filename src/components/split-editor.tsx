@@ -36,11 +36,19 @@ export function SplitEditor({ note }: { note: Note }) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // TODO: Implement save API
     try {
-        await new Promise(r => setTimeout(r, 1000)); // Fake save
+        const response = await fetch(`/api/notes/${note.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content }),
+        });
+
+        if (!response.ok) {
+            throw new Error('儲存失敗');
+        }
         toast.success("變更已儲存");
     } catch(e) {
+        console.error("Error saving note:", e);
         toast.error("儲存失敗");
     } finally {
         setIsSaving(false);

@@ -21,8 +21,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
     }
 
-    // 2. 從資料庫刪除筆記記錄
-    await prisma.note.delete({
+    // 2. 從資料庫刪除筆記記錄\n    await prisma.note.delete({
       where: { id },
     });
 
@@ -45,6 +44,36 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   } catch (error) {
     console.error("Delete Note Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// PUT API: 更新單個筆記內容
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = await params;
+    const { content } = await request.json(); // 獲取更新後的內容
+
+    if (!id || typeof content !== 'string') {
+      return NextResponse.json({ error: "Missing noteId or content" }, { status: 400 });
+    }
+
+    const updatedNote = await prisma.note.update({
+      where: { id },
+      data: {
+        refinedContent: content,
+      },
+    });
+
+    // 重新驗證相關頁面，確保內容即時更新
+    revalidatePath(`/notes/${id}`); // 筆記詳情頁
+    revalidatePath('/'); // 首頁儀表板
+    revalidatePath('/notes'); // 所有筆記列表
+
+    return NextResponse.json({ success: true, note: updatedNote });
+
+  } catch (error) {
+    console.error("Update Note Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

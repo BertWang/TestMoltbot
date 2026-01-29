@@ -1,0 +1,152 @@
+"use client";
+
+import { useState } from "react";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, Edit2, ZoomIn, ZoomOut, Save, RefreshCw } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+
+interface Note {
+  id: string;
+  imageUrl: string;
+  refinedContent: string | null;
+  rawOcrText: string | null;
+  summary: string | null;
+  tags: string;
+}
+
+export function SplitEditor({ note }: { note: Note }) {
+  const [content, setContent] = useState(note.refinedContent || "");
+  const [zoom, setZoom] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Parse tags
+  const tags = note.tags ? note.tags.split(",") : [];
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    // TODO: Implement save API
+    try {
+        await new Promise(r => setTimeout(r, 1000)); // Fake save
+        toast.success("變更已儲存");
+    } catch(e) {
+        toast.error("儲存失敗");
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+      {/* Left Panel: Image Viewer */}
+      <ResizablePanel defaultSize={45} minSize={25}>
+        <div className="h-full flex flex-col bg-stone-100/50">
+          <div className="p-2 border-b border-stone-200 flex items-center justify-between bg-white/50">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider px-2">Original Source</span>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}>
+                <ZoomOut className="w-3.5 h-3.5" />
+              </Button>
+              <span className="text-xs w-8 text-center">{(zoom * 100).toFixed(0)}%</span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>
+                <ZoomIn className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-stone-200/30">
+            <div 
+                className="transition-transform duration-200 ease-out origin-center shadow-lg border border-stone-200 bg-white"
+                style={{ transform: `scale(${zoom})` }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={note.imageUrl} 
+                alt="Original Note" 
+                className="max-w-full h-auto object-contain block"
+                style={{ maxHeight: 'calc(100vh - 120px)' }}
+              />
+            </div>
+          </div>
+        </div>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* Right Panel: Editor / Preview */}
+      <ResizablePanel defaultSize={55} minSize={30}>
+        <div className="h-full flex flex-col bg-white">
+             {/* Info Bar */}
+            <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/30 flex flex-wrap gap-2 items-center">
+                 {tags.map(tag => (
+                     <Badge key={tag} variant="secondary" className="text-[10px] px-2 py-0 h-5 bg-stone-100 text-stone-600 hover:bg-stone-200 border-stone-200">
+                        #{tag}
+                     </Badge>
+                 ))}
+                 {note.summary && (
+                     <span className="text-xs text-stone-500 border-l border-stone-200 pl-2 ml-1 italic truncate max-w-md">
+                        "{note.summary}"
+                     </span>
+                 )}
+            </div>
+
+          <Tabs defaultValue="preview" className="flex-1 flex flex-col overflow-hidden">
+            <div className="border-b border-stone-200 px-2 flex items-center justify-between bg-white">
+                <TabsList className="bg-transparent h-10 p-0 gap-1">
+                    <TabsTrigger value="preview" className="data-[state=active]:bg-stone-100 data-[state=active]:text-stone-900 data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-stone-400 px-4 py-2 h-10 text-xs font-medium">
+                        <Eye className="w-3.5 h-3.5 mr-2" />
+                        預覽模式
+                    </TabsTrigger>
+                    <TabsTrigger value="edit" className="data-[state=active]:bg-stone-100 data-[state=active]:text-stone-900 data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-stone-400 px-4 py-2 h-10 text-xs font-medium">
+                        <Edit2 className="w-3.5 h-3.5 mr-2" />
+                        編輯 Markdown
+                    </TabsTrigger>
+                </TabsList>
+                
+                <Button 
+                    size="sm" 
+                    onClick={handleSave} 
+                    disabled={isSaving}
+                    className="h-7 text-xs bg-stone-900 text-white hover:bg-stone-800"
+                >
+                    {isSaving ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                    儲存變更
+                </Button>
+            </div>
+
+            <div className="flex-1 overflow-hidden relative">
+                <TabsContent value="preview" className="h-full m-0 p-0 border-0">
+                    <ScrollArea className="h-full w-full">
+                        <div className="prose prose-stone prose-sm max-w-none p-8 font-serif">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {content}
+                            </ReactMarkdown>
+                        </div>
+                    </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="edit" className="h-full m-0 p-0 border-0">
+                     <Textarea 
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        className="w-full h-full resize-none p-6 font-mono text-sm border-0 focus-visible:ring-0 rounded-none leading-relaxed text-stone-700 bg-stone-50/20"
+                        spellCheck={false}
+                     />
+                </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+}

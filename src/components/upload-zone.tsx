@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { UploadCloud, FileImage, X, Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
@@ -13,6 +14,7 @@ export function UploadZone() {
   const [files, setFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const router = useRouter()
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // 過濾非圖片或 PDF (這裡先簡單只收圖片)
@@ -41,27 +43,46 @@ export function UploadZone() {
     setIsUploading(true)
     setUploadProgress(0)
 
-    // 模擬上傳進度
+    // 簡單進度模擬
     const interval = setInterval(() => {
         setUploadProgress(prev => {
-            if (prev >= 95) {
-                clearInterval(interval)
-                return 95
-            }
-            return prev + 5
+            if (prev >= 90) return 90
+            return prev + 10
         })
-    }, 200)
+    }, 500)
 
-    // 這裡未來接真實的 Server Action
     try {
-        await new Promise(resolve => setTimeout(resolve, 2000)) // 假裝傳了 2 秒
-        setUploadProgress(100)
-        toast.success(`成功上傳 ${files.length} 份筆記`, {
-            description: "AI 正在背景進行辨識與整理..."
+        const formData = new FormData()
+        // 目前先只處理第一張圖，未來可擴充為批次上傳
+        formData.append('file', files[0])
+
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
         })
-        setFiles([])
+
+        if (!response.ok) {
+            throw new Error('Upload failed')
+        }
+
+        const data = await response.json()
+
+        setUploadProgress(100)
+        toast.success("上傳並辨識成功！", {
+            description: "正在前往筆記頁面..."
+        })
+        
+        // 延遲一下讓用戶看到 100%
+        setTimeout(() => {
+            router.push(`/notes/${data.noteId}`)
+        }, 800)
+
     } catch (e) {
-        toast.error("上傳失敗，請稍後再試")
+        console.error(e)
+        toast.error("處理失敗", {
+            description: "請檢查網路或稍後再試"
+        })
+        setUploadProgress(0)
     } finally {
         setIsUploading(false)
         clearInterval(interval)

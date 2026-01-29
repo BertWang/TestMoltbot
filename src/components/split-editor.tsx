@@ -74,9 +74,6 @@ export function SplitEditor({ note }: { note: Note }) {
     }
   };
 
-  const [isRetrying, setIsRetrying] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(note.status || "COMPLETED");
-
   const handleRetry = async () => {
     setIsRetrying(true);
     toast.info("正在重新分析筆記...");

@@ -52,17 +52,19 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params;
-    const { content } = await request.json(); // 獲取更新後的內容
+    const { content, tags } = await request.json(); // 獲取更新後的內容與標籤
 
-    if (!id || typeof content !== 'string') {
-      return NextResponse.json({ error: "Missing noteId or content" }, { status: 400 });
+    if (!id || (typeof content !== 'string' && typeof tags !== 'string')) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
+
+    const updateData: any = {};
+    if (typeof content === 'string') updateData.refinedContent = content;
+    if (typeof tags === 'string') updateData.tags = tags;
 
     const updatedNote = await prisma.note.update({
       where: { id },
-      data: {
-        refinedContent: content,
-      },
+      data: updateData,
     });
 
     // 重新驗證相關頁面，確保內容即時更新

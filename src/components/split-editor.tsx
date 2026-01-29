@@ -10,11 +10,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Edit2, ZoomIn, ZoomOut, Save, RefreshCw } from "lucide-react";
+import { Eye, Edit2, ZoomIn, ZoomOut, Save, RefreshCw, X, Plus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input"; // 引入 Input
 
 interface Note {
   id: string;
@@ -30,9 +31,24 @@ export function SplitEditor({ note }: { note: Note }) {
   const [content, setContent] = useState(note.refinedContent || "");
   const [zoom, setZoom] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(note.status || "COMPLETED");
 
-  // Parse tags
-  const tags = note.tags ? note.tags.split(",") : [];
+  // 標籤管理狀態
+  const [editableTags, setEditableTags] = useState<string[]>(note.tags ? note.tags.split(',').filter(Boolean).map(tag => tag.trim()) : []);
+  const [newTagInput, setNewTagInput] = useState("");
+
+  const addTag = () => {
+    const tagToAdd = newTagInput.trim();
+    if (tagToAdd && !editableTags.includes(tagToAdd)) {
+      setEditableTags(prev => [...prev, tagToAdd]);
+      setNewTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setEditableTags(prev => prev.filter(tag => tag !== tagToRemove));
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -40,7 +56,10 @@ export function SplitEditor({ note }: { note: Note }) {
         const response = await fetch(`/api/notes/${note.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: content }),
+            body: JSON.stringify({ 
+                content: content, 
+                tags: editableTags.join(',') // 傳送更新後的標籤
+            }),
         });
 
         if (!response.ok) {
@@ -127,14 +146,32 @@ export function SplitEditor({ note }: { note: Note }) {
       <ResizablePanel defaultSize={55} minSize={30}>
         <div className="h-full flex flex-col bg-white">
              {/* Info Bar */}
-            <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/30 flex flex-wrap gap-2 items-center">
-                 {tags.map(tag => (
-                     <Badge key={tag} variant="secondary" className="text-[10px] px-2 py-0 h-5 bg-stone-100 text-stone-600 hover:bg-stone-200 border-stone-200">
+            <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/30 flex flex-wrap gap-2 items-center min-h-[40px]">
+                 {editableTags.map(tag => (
+                     <Badge key={tag} variant="secondary" className="group text-[10px] px-2 py-0 h-6 bg-stone-100 text-stone-600 hover:bg-stone-200 border-stone-200 flex items-center gap-1 cursor-default transition-all">
                         #{tag}
+                        <span onClick={() => removeTag(tag)} className="hover:text-red-500 hover:bg-red-50 rounded-full p-0.5 cursor-pointer ml-1 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X className="w-2.5 h-2.5" />
+                        </span>
                      </Badge>
                  ))}
+                 
+                 {/* New Tag Input */}
+                 <div className="flex items-center gap-1">
+                    <Input 
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') addTag(); }}
+                        placeholder="Add tag..."
+                        className="h-6 w-24 text-[11px] px-2 border-stone-200 bg-white focus-visible:ring-1 focus-visible:ring-stone-300"
+                    />
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={addTag}>
+                        <Plus className="w-3.5 h-3.5 text-stone-400" />
+                    </Button>
+                 </div>
+
                  {note.summary && (
-                     <span className="text-xs text-stone-500 border-l border-stone-200 pl-2 ml-1 italic truncate max-w-md">
+                     <span className="text-xs text-stone-500 border-l border-stone-200 pl-3 ml-2 italic truncate flex-1">
                         "{note.summary}"
                      </span>
                  )}

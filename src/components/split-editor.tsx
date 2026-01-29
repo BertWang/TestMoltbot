@@ -23,6 +23,7 @@ interface Note {
   rawOcrText: string | null;
   summary: string | null;
   tags: string;
+  status?: string;
 }
 
 export function SplitEditor({ note }: { note: Note }) {
@@ -43,6 +44,37 @@ export function SplitEditor({ note }: { note: Note }) {
         toast.error("儲存失敗");
     } finally {
         setIsSaving(false);
+    }
+  };
+
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(note.status || "COMPLETED");
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    toast.info("正在重新分析筆記...");
+    
+    try {
+        const res = await fetch('/api/retry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ noteId: note.id })
+        });
+        
+        if (!res.ok) throw new Error("Retry failed");
+        
+        const data = await res.json();
+        setContent(data.note.refinedContent);
+        setCurrentStatus("COMPLETED");
+        toast.success("分析完成！");
+        // 重新整理頁面以更新其他資訊 (如 confidence)
+        window.location.reload(); 
+        
+    } catch (e) {
+        toast.error("重試失敗，請稍後再試");
+        setCurrentStatus("FAILED");
+    } finally {
+        setIsRetrying(false);
     }
   };
 
@@ -117,11 +149,24 @@ export function SplitEditor({ note }: { note: Note }) {
                     size="sm" 
                     onClick={handleSave} 
                     disabled={isSaving}
-                    className="h-7 text-xs bg-stone-900 text-white hover:bg-stone-800"
+                    variant="ghost"
+                    className="h-7 text-xs text-stone-600 hover:text-stone-900 hover:bg-stone-100"
                 >
                     {isSaving ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
-                    儲存變更
+                    儲存
                 </Button>
+                
+                {currentStatus === 'FAILED' && (
+                    <Button 
+                        size="sm" 
+                        onClick={handleRetry} 
+                        disabled={isRetrying}
+                        className="h-7 text-xs bg-red-500 text-white hover:bg-red-600 ml-2"
+                    >
+                        {isRetrying ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                        重試分析
+                    </Button>
+                )}
             </div>
 
             <div className="flex-1 overflow-hidden relative">

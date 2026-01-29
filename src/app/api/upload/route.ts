@@ -9,8 +9,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    console.log("Received upload request. File:", file?.name, "Type:", file?.type, "Size:", file?.size);
+
+    if (!file || file.size === 0) {
+      return NextResponse.json({ error: "No file uploaded or empty file" }, { status: 400 });
     }
 
     // 1. 儲存檔案到本地 (public/uploads)
@@ -34,6 +36,7 @@ export async function POST(request: NextRequest) {
         imageUrl: publicUrl,
         fileKey: filename,
         status: "PROCESSING", // 立即開始處理
+        tags: "", // 初始化為空字串，因為 Schema 中是必填
       },
     });
 

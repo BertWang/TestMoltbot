@@ -41,7 +41,7 @@ model Note {
   
   // C. 第三階段：歸檔 (Classification)
   summary        String?  // AI 自動生成的摘要
-  tags           String   // 標籤 (SQLite 不支援 String[]，使用逗號分隔字串儲存，如 "tag1,tag2")
+  tags           String?   // 標籤 (SQLite 不支援 String[]，使用逗號分隔字串儲存，如 "tag1,tag2")
 
   // 狀態管理
   status         String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED

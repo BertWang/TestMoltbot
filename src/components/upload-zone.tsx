@@ -46,15 +46,39 @@ export function UploadZone() {
     // 簡單進度模擬
     const interval = setInterval(() => {
         setUploadProgress(prev => {
-            if (prev >= 90) return 90
-            return prev + 10
+            if (prev >= 95) {
+                clearInterval(interval)
+                return 95
+            }
+            return prev + 5
         })
     }, 500)
 
     try {
         const formData = new FormData()
-        // 目前先只處理第一張圖，未來可擴充為批次上傳
-        formData.append('file', files[0])
+            // 批次處理所有檔案
+        const uploadPromises = files.map(async (file) => {
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!response.ok) {
+                throw new Error(`上傳失敗: ${file.name}`)
+            }
+            return response.json()
+        })
+
+        // 監控每個檔案的進度
+        let processedCount = 0
+        for (const promise of uploadPromises) {
+            await promise; // 等待每個檔案完成
+            processedCount++;
+            setUploadProgress(Math.min(99, Math.floor((processedCount / files.length) * 100)));
+        }
 
         const response = await fetch('/api/upload', {
             method: 'POST',
@@ -68,13 +92,14 @@ export function UploadZone() {
         const data = await response.json()
 
         setUploadProgress(100)
-        toast.success("上傳並辨識成功！", {
-            description: "正在前往筆記頁面..."
+        toast.success(`成功上傳 ${files.length} 份筆記！`, {
+            description: "AI 正在背景進行辨識與整理..."
         })
         
         // 延遲一下讓用戶看到 100%
         setTimeout(() => {
-            router.push(`/notes/${data.noteId}`)
+            // 導向到首頁，讓用戶可以看到更新後的列表
+            router.push(`/`)
         }, 800)
 
     } catch (e) {

@@ -1,4 +1,4 @@
-import { Home, Inbox, Search, Settings, PlusCircle, BookOpen, Layers } from "lucide-react"
+import { Home, Search, Settings, PlusCircle, BookOpen, Layers } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,21 +15,25 @@ import {
 // Menu items.
 const items = [
   {
-    title: "所有筆記",
+    id: "home",
+    title: "儀表板", // 更改為儀表板以區分
     url: "/",
     icon: Home,
   },
   {
-    title: "最近上傳",
-    url: "/recent",
-    icon: Inbox,
+    id: "all-notes",
+    title: "所有筆記",
+    url: "/notes",
+    icon: Layers,
   },
   {
+    id: "collections",
     title: "知識庫",
     url: "/collections",
     icon: BookOpen,
   },
   {
+    id: "search",
     title: "搜尋",
     url: "/search",
     icon: Search,
@@ -38,6 +42,7 @@ const items = [
 
 const settingsItems = [
     {
+        id: "settings",
         title: "設定",
         url: "/settings",
         icon: Settings,

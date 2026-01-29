@@ -57,7 +57,9 @@ export function UploadZone() {
     try {
         const formData = new FormData()
             // 批次處理所有檔案
-        const uploadPromises = files.map(async (file) => {
+        const uploadPromises = files.filter(Boolean).map(async (file) => { 
+            if (!file) return; // 再次檢查 file 是否有效，以防萬一
+
             const formData = new FormData()
             formData.append('file', file)
 
@@ -79,17 +81,6 @@ export function UploadZone() {
             processedCount++;
             setUploadProgress(Math.min(99, Math.floor((processedCount / files.length) * 100)));
         }
-
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        })
-
-        if (!response.ok) {
-            throw new Error('Upload failed')
-        }
-
-        const data = await response.json()
 
         setUploadProgress(100)
         toast.success(`成功上傳 ${files.length} 份筆記！`, {

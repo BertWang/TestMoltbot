@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { SplitEditor } from "@/components/split-editor";
 import { Badge } from "@/components/ui/badge"; // 稍後需確認是否安裝 Badge
-import { ArrowLeft, Clock, Tag } from "lucide-react";
+import { NoteDeleteButton } from "@/components/note-delete-button"; // 引入刪除按鈕組件
+import { ArrowLeft, Clock, Tag, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function NotePage({ params }: { params: { id: string } }) {
   // Await params object (Next.js 15 requirement)
@@ -51,7 +53,7 @@ export default async function NotePage({ params }: { params: { id: string } }) {
         </div>
 
         <div className="flex items-center gap-2">
-           {/* Actions can go here (Save, Share, etc.) */}
+           <NoteDeleteButton noteId={note.id} />
         </div>
       </header>
 

@@ -3,6 +3,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { prisma } from "@/lib/prisma";
 import { processNoteWithGemini } from "@/lib/gemini";
+import { revalidatePath } from 'next/cache'; // 引入 revalidatePath
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest) {
           status: "COMPLETED",
         },
       });
+
+      // 重新驗證首頁數據，確保前端列表即時更新
+      revalidatePath('/');
 
       return NextResponse.json({ success: true, noteId: updatedNote.id });
 

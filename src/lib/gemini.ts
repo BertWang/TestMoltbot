@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GoogleGenerativeAIFetchError } from "@google/generative-ai";
 import fs from "fs";
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -29,16 +29,16 @@ export interface ProcessedNote {
 
 export async function processNoteWithGemini(filePath: string, mimeType: string = "image/jpeg"): Promise<ProcessedNote> {
   const imagePart = fileToGenerativePart(filePath, mimeType);
-
   const prompt = `
   You are an expert archivist digitizing handwritten notes.
-  Please perform the following steps on the provided image:
-  1. **OCR**: Transcribe the text exactly as written, preserving original line breaks.
-  2. **Refinement**: Create a clean, corrected version in Markdown format. Fix spelling errors, improve punctuation, and organize headers/lists if implied by the layout. 請確保所有中文輸出為繁體中文。
-  3. **Analysis**: Generate a brief summary (1-2 sentences) and extraction 3-5 relevant tags.
-  4. **Confidence**: Estimate a confidence score (0.0 to 1.0) based on legibility.
+  請執行以下步驟，並確保所有中文輸出（包括摘要與標籤）為繁體中文。
 
-  Output strictly in valid JSON format without code blocks:
+  1. **OCR**: 準確轉錄圖片中的文字，保留原始換行符。
+  2. **Refinement**: 創建一個清晰、校正後的 Markdown 版本。修正拼寫錯誤、改進標點符號，並根據佈局組織標題/列表。
+  3. **Analysis**: 生成一個簡短的摘要（1-2 句話）和 3-5 個相關標籤。
+  4. **Confidence**: 根據文字的清晰度，估計一個信心分數（0.0 到 1.0）。
+
+  請嚴格以有效的 JSON 格式輸出，不要包含程式碼區塊：
   {
     "rawOcr": "...",
     "refinedContent": "...",
@@ -48,40 +48,50 @@ export async function processNoteWithGemini(filePath: string, mimeType: string =
   }
   `;
 
-  try {
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    const text = response.text();
-    
-    // 清理 markdown code blocks 和其他可能影響 JSON 解析的字符
-    // 移除開頭和結尾的 ```json / ```
-    let jsonStr = text.replace(/```json\n/g, "").replace(/```/g, "").trim();
-    // 移除其他非預期控制字符（例如 null 字符等）
-    jsonStr = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
-    
+  const MAX_RETRIES = 3;
+  let retries = 0;
+
+  while (retries < MAX_RETRIES) {
     try {
-      return JSON.parse(jsonStr) as ProcessedNote;
-    } catch (parseError) {
-      console.error("Error parsing Gemini JSON response:", parseError);
-      console.error("Raw Gemini text:", text);
-      // 如果解析失敗，嘗試從原始文本中提取部分資訊
-      // 這是一個簡易的 fallback，真實場景可能需要更複雜的解析邏輯
-      const fallbackRawOcr = text.substring(0, Math.min(200, text.length));
-      const fallbackRefinedContent = fallbackRawOcr;
-      const fallbackSummary = "AI 內容解析失敗";
-      const fallbackTags = ["failed-parse"];
-      const fallbackConfidence = 0.1; // 低信心分數
+      const result = await model.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      const text = response.text();
       
-      return {
-        rawOcr: fallbackRawOcr,
-        refinedContent: fallbackRefinedContent,
-        summary: fallbackSummary,
-        tags: fallbackTags,
-        confidence: fallbackConfidence,
-      };
+      // 清理 markdown code blocks 和其他可能影響 JSON 解析的字符
+      // 移除開頭和結尾的 ```json / ```
+      let jsonStr = text.replace(/```json\n/g, "").replace(/```/g, "").trim();
+      // 移除其他非預期控制字符（例如 null 字符等）
+      jsonStr = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+      
+      try {
+        return JSON.parse(jsonStr) as ProcessedNote;
+      } catch (parseError) {
+        console.error("Error parsing Gemini JSON response:", parseError);
+        console.error("Raw Gemini text:", text);
+        const fallbackRawOcr = text.substring(0, Math.min(200, text.length));
+        const fallbackRefinedContent = fallbackRawOcr;
+        const fallbackSummary = "AI 內容解析失敗";
+        const fallbackTags = ["failed-parse"];
+        const fallbackConfidence = 0.1; 
+        
+        return {
+          rawOcr: fallbackRawOcr,
+          refinedContent: fallbackRefinedContent,
+          summary: fallbackSummary,
+          tags: fallbackTags,
+          confidence: fallbackConfidence,
+        };
+      }
+    } catch (error) {
+      if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
+        retries++;
+        const delay = Math.pow(2, retries) * 1000 + Math.random() * 1000; // Exponential backoff
+        console.warn(`Gemini API rate limit hit. Retrying in ${delay / 1000}s... (Attempt ${retries}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error; // Other errors are re-thrown immediately
+      }
     }
-  } catch (error) {
-    console.error("Error interacting with Gemini:", error);
-    throw error;
   }
+  throw new Error("Gemini API processing failed after multiple retries due to rate limits.");
 }

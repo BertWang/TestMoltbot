@@ -217,7 +217,7 @@ export function SplitEditor({ note }: { note: Note }) {
             <div className="flex-1 overflow-hidden relative">
                 <TabsContent value="preview" className="h-full m-0 p-0 border-0">
                     <ScrollArea className="h-full w-full">
-                        <div className="prose prose-stone prose-sm max-w-none p-8 font-serif">
+                        <div className="prose prose-stone prose-sm max-w-none p-8 font-serif prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:max-h-[600px] prose-img:w-auto prose-hr:my-8">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {content}
                             </ReactMarkdown>

@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { AIFunctionsMenu } from "@/components/ai-functions-menu";
+import { MCPMenu } from "@/components/mcp-menu";
+import { ChatToolbar } from "@/components/chat-toolbar";
 
 interface Suggestion {
   id: string;
@@ -34,6 +37,11 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
   const [activeTab, setActiveTab] = useState("suggestions");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+  const [deepThinkEnabled, setDeepThinkEnabled] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [streamEnabled, setStreamEnabled] = useState(true);
+  const [enabledMCPServers, setEnabledMCPServers] = useState<string[]>(["search"]);
 
   // 獲取建議
   const fetchSuggestions = useCallback(async () => {
@@ -246,6 +254,16 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
 
         {/* AI 對話 Tab */}
         <TabsContent value="chat" className="flex-1 flex flex-col gap-3 overflow-hidden">
+          {/* 新增：高級工具欄 */}
+          <ChatToolbar
+            deepThinkEnabled={deepThinkEnabled}
+            ttsEnabled={ttsEnabled}
+            streamEnabled={streamEnabled}
+            onDeepThinkChange={setDeepThinkEnabled}
+            onTtsChange={setTtsEnabled}
+            onStreamChange={setStreamEnabled}
+          />
+
           <ScrollArea className="flex-1 border border-stone-200 rounded-lg bg-stone-50/30">
             <div className="p-4 space-y-4">
               {messages.length === 0 ? (
@@ -342,6 +360,27 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
               <div ref={scrollRef} />
             </div>
           </ScrollArea>
+
+          {/* AI 功能菜單 */}
+          <AIFunctionsMenu
+            onSelectFunction={(functionId) => {
+              setSelectedFunction(functionId);
+              setInputValue(`[${functionId}] `);
+            }}
+            selectedFunction={selectedFunction}
+          />
+
+          {/* 新增：MCP 服務器菜單 */}
+          <MCPMenu
+            enabledServers={enabledMCPServers}
+            onToggleServer={(serverId) => {
+              setEnabledMCPServers((prev) =>
+                prev.includes(serverId)
+                  ? prev.filter((s) => s !== serverId)
+                  : [...prev, serverId]
+              );
+            }}
+          />
 
           {/* 輸入區域 */}
           <div className="flex items-end gap-2 bg-white border border-stone-200 rounded-lg p-2 shadow-sm">

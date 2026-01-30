@@ -252,3 +252,38 @@ Added a structured form in the Admin UI to create MCP server entries without emb
 The Admin UI will store placeholder markers for env vars (e.g. `__ENV__OPENAPI_MCP_HEADERS__`) in the integration config; real secret values must be injected at runtime using the host/CI secrets manager. See `.mcp.example.json` for example MCP server entries.
 
 這份規劃書將隨著開發進度持續更新，作為專案進化的依據。
+
+---
+
+## 進階搜尋功能 (Advanced Search Feature) ✨
+
+### 搜尋頁面 (`/search`)
+提供多條件搜尋介面，支持：
+- **關鍵詞搜尋**: 在筆記內容、摘要、標籤中全文搜尋
+- **日期範圍篩選**: 按建立日期篩選 (dateFrom/dateTo)
+- **信心分數篩選**: 按 AI 辨識信心分數篩選 (0.0-1.0 範圍)
+- **狀態篩選**: 按處理狀態篩選 (COMPLETED/PROCESSING/FAILED)
+- **標籤篩選**: 按標籤篩選（逗號分隔多標籤）
+
+### 搜尋 API (`/api/search`)
+```bash
+GET /api/search?query=會議&dateFrom=2025-01-01&status=COMPLETED&confidenceMin=0.8
+```
+- 支持複雜 WHERE 子句組合 (AND/OR)
+- 最多返回 100 結果
+- 按 createdAt 降序排列
+
+### 搜尋結果顯示
+- 卡片式網格佈局（響應式）
+- 縮圖預覽、摘要、狀態徽章
+- 信心分數百分比顯示
+- 關聯標籤顯示
+- 關鍵詞高亮（黃色背景）
+- 批量選擇支持
+
+### 測試
+```bash
+npm run test:search  # 單元測試 (8 個測試項目)
+```
+
+詳見 [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) 完整功能文件。

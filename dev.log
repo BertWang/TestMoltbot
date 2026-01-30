@@ -18,3 +18,14 @@
 ✓ Compiled in 333ms
 ✓ Compiled in 191ms
  GET /api/search?query=test&status=COMPLETED 200 in 868ms (compile: 850ms, render: 18ms)
+ GET /notes 200 in 95ms (compile: 3ms, render: 92ms)
+ GET /search 200 in 265ms (compile: 50ms, render: 215ms)
+ GET /collections 404 in 372ms (compile: 275ms, render: 96ms)
+ GET /notes 200 in 90ms (compile: 3ms, render: 87ms)
+ GET /api/search?query=11 200 in 12ms (compile: 4ms, render: 8ms)
+✓ Compiled in 79ms
+ GET /notes 200 in 455ms (compile: 36ms, render: 419ms)
+ GET /search 200 in 67ms (compile: 3ms, render: 64ms)
+ GET /notes 200 in 85ms (compile: 3ms, render: 82ms)
+ GET /search 200 in 62ms (compile: 4ms, render: 58ms)
+✓ Compiled in 74ms

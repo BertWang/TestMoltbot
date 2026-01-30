@@ -112,7 +112,7 @@ export function AdvancedSearchClient() {
               <Filter className="w-4 h-4" />
             </Button>
           </div>
-          <span className="text-xs text-stone-400 whitespace-nowrap px-2">輸入 2 個字符或以上開始搜尋</span>
+          <span className="text-xs text-stone-400 whitespace-nowrap px-2">輸入 2 個字符開始搜尋</span>
         </div>
 
         {/* Advanced Filters */}

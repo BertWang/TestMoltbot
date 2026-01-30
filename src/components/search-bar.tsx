@@ -81,38 +81,37 @@ export function SearchBar({ onSearch, onClear, showResults = false }: SearchBarP
   };
 
   return (
-    <div className="relative w-full max-w-md">
-      <div className="relative flex items-center">
-        <Search className="absolute left-3 w-4 h-4 text-stone-400" />
-        <Input
-          type="text"
-          placeholder="搜尋筆記內容、摘要、標籤..."
-          value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => query && setIsOpen(true)}
-          className="pl-9 pr-9 bg-white border-stone-200 focus:border-stone-400"
-        />
-        {query && (
-          <button
-            onClick={handleClear}
-            disabled={isPending}
-            className="absolute right-3 text-stone-400 hover:text-stone-600 disabled:opacity-50"
-          >
-            {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <X className="w-4 h-4" />
-            )}
-          </button>
+    <div className="relative w-full">
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1 max-w-md flex items-center">
+          <Search className="absolute left-3 w-4 h-4 text-stone-400" />
+          <Input
+            type="text"
+            placeholder="搜尋筆記內容、摘要、標籤..."
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={() => query && setIsOpen(true)}
+            className="pl-9 pr-9 bg-white border-stone-200 focus:border-stone-400"
+          />
+          {query && (
+            <button
+              onClick={handleClear}
+              disabled={isPending}
+              className="absolute right-3 text-stone-400 hover:text-stone-600 disabled:opacity-50"
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <X className="w-4 h-4" />
+              )}
+            </button>
+          )}
+        </div>
+        {/* 提示文本放在搜尋框旁邊 */}
+        {!query && (
+          <span className="text-xs text-stone-400 whitespace-nowrap">輸入 2 個字符開始搜尋</span>
         )}
       </div>
-
-      {/* 搜尋提示 */}
-      {!query && (
-        <div className="absolute top-12 left-0 right-0 mt-2 p-3 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-600 text-center z-10">
-          輸入 2 個字符或以上開始搜尋
-        </div>
-      )}
     </div>
   );
 }

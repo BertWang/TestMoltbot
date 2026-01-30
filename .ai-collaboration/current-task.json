@@ -1,0 +1,56 @@
+{
+  "taskId": "version-info-display",
+  "status": "completed",
+  "assignedTo": "github-copilot",
+  "createdBy": "clawdbot",
+  "description": "版本資訊顯示功能",
+  "steps": [
+    {
+      "id": 1,
+      "description": "創建版本資訊工具函數",
+      "status": "completed",
+      "files": ["src/lib/version.ts"]
+    },
+    {
+      "id": 2,
+      "description": "更新構建配置",
+      "status": "completed",
+      "files": ["next.config.ts"]
+    },
+    {
+      "id": 3,
+      "description": "創建版本資訊展示組件",
+      "status": "completed",
+      "files": ["src/components/version-info.tsx"]
+    },
+    {
+      "id": 4,
+      "description": "創建頁腳組件",
+      "status": "completed",
+      "files": ["src/components/footer.tsx"]
+    },
+    {
+      "id": 5,
+      "description": "整合到設置頁面",
+      "status": "completed",
+      "files": ["src/app/settings/page.tsx"]
+    },
+    {
+      "id": 6,
+      "description": "整合頁腳到主布局",
+      "status": "completed",
+      "files": ["src/app/layout.tsx"]
+    },
+    {
+      "id": 7,
+      "description": "測試構建",
+      "status": "completed",
+      "files": []
+    }
+  ],
+  "createdAt": "2026-01-30T12:00:00Z",
+  "lastUpdate": "2026-01-30T12:15:00Z",
+  "completedSteps": 7,
+  "totalSteps": 7,
+  "progress": 100
+}

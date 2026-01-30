@@ -3,6 +3,7 @@ import { Merriweather, Inter } from "next/font/google";
 import "./globals.css";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { Footer } from "@/components/footer"
 import { Toaster } from "@/components/ui/sonner"
 
 const serif = Merriweather({
@@ -37,7 +38,10 @@ export default function RootLayout({
             <div className="absolute top-4 left-4 z-50 md:hidden">
                 <SidebarTrigger />
             </div>
-            {children}
+            <div className="flex-1">
+              {children}
+            </div>
+            <Footer />
           </main>
           <Toaster position="bottom-right" theme="light" />
         </SidebarProvider>

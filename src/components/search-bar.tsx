@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useTransition } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X, Loader2, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -131,6 +131,40 @@ export function SearchBar({ onSearch, onClear, showResults = false }: SearchBarP
     [handleSearch]
   );
 
+  // 保存當前搜尋
+  const handleSaveSearch = useCallback(
+    async (name?: string, description?: string) => {
+      if (!name?.trim() || !query.trim()) {
+        toast.error("請輸入搜尋名稱");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/search/saved", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            query: query,
+            description: description || null,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save search");
+        }
+
+        toast.success("搜尋已保存");
+      } catch (err) {
+        console.error("Save search error:", err);
+        toast.error("保存失敗");
+      }
+    },
+    [query]
+  );
+
   return (
     <div className="relative w-full">
       <div className="flex gap-2 items-center">
@@ -169,10 +203,27 @@ export function SearchBar({ onSearch, onClear, showResults = false }: SearchBarP
             onKeyNavigate={handleKeyNavigate}
           />
         </div>
-        {/* 提示文本放在搜尋框旁邊 */}
-        {!query && (
-          <span className="text-xs text-stone-400 whitespace-nowrap">輸入 2 個字符開始搜尋</span>
-        )}
+        {/* 保存和提示文本 */}
+        <div className="flex items-center gap-2">
+          {query && (
+            <button
+              onClick={() => {
+                const name = prompt("搜尋名稱:");
+                if (name?.trim()) {
+                  const description = prompt("搜尋描述 (可選):");
+                  handleSaveSearch(name, description || undefined);
+                }
+              }}
+              className="p-1.5 text-stone-600 hover:text-blue-500 hover:bg-stone-100 rounded transition-colors"
+              title="保存此搜尋"
+            >
+              <Star className="w-4 h-4" />
+            </button>
+          )}
+          {!query && (
+            <span className="text-xs text-stone-400 whitespace-nowrap">輸入 2 個字符開始搜尋</span>
+          )}
+        </div>
       </div>
     </div>
   );

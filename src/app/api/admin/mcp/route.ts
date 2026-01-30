@@ -111,14 +111,23 @@ export async function POST(request: NextRequest) {
       }
 
       // 保存配置到數據庫
-      const integration = await prisma.integration.upsert({
+      let integration = await prisma.integration.findFirst({
         where: { provider: serverName },
-        update: { enabled: enabled !== undefined ? enabled : true },
-        create: {
-          provider: serverName,
-          enabled: enabled !== undefined ? enabled : true,
-        },
       });
+
+      if (integration) {
+        integration = await prisma.integration.update({
+          where: { id: integration.id },
+          data: { enabled: enabled !== undefined ? enabled : true },
+        });
+      } else {
+        integration = await prisma.integration.create({
+          data: {
+            provider: serverName,
+            enabled: enabled !== undefined ? enabled : true,
+          },
+        });
+      }
 
       return NextResponse.json({
         success: true,

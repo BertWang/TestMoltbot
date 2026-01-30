@@ -279,32 +279,3 @@ export function SplitEditor({ note }: { note: Note }) {
     </ResizablePanelGroup>
   );
 }
-
-                <TabsContent value="preview" className="h-full m-0 p-0 border-0">
-                    <ScrollArea className="h-full w-full">
-                        <div className="prose prose-stone prose-sm max-w-none p-8 font-serif prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:max-h-[600px] prose-img:w-auto prose-hr:my-8">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {content}
-                            </ReactMarkdown>
-                        </div>
-                    </ScrollArea>
-                </TabsContent>
-                        </div>
-                    </ScrollArea>
-                </TabsContent>
-
-                <TabsContent value="edit" className="h-full m-0 p-0 border-0">
-                     <Textarea 
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="w-full h-full resize-none p-6 font-mono text-sm border-0 focus-visible:ring-0 rounded-none leading-relaxed text-stone-700 bg-stone-50/20"
-                        spellCheck={false}
-                     />
-                </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
-  );
-}

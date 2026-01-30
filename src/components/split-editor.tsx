@@ -10,12 +10,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Edit2, ZoomIn, ZoomOut, Save, RefreshCw, X, Plus } from "lucide-react";
+import { Eye, Edit2, ZoomIn, ZoomOut, Save, RefreshCw, X, Plus, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input"; // 引入 Input
+import { // 引入 Sheet 相關組件
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Note {
   id: string;
@@ -209,6 +217,40 @@ export function SplitEditor({ note }: { note: Note }) {
                         重試分析
                     </Button>
                 )}
+
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Sparkles className="w-4 h-4" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-96 flex flex-col gap-4">
+                        <SheetHeader>
+                            <SheetTitle>AI 助手</SheetTitle>
+                            <SheetDescription>從 AI 獲取洞察與建議</SheetDescription>
+                        </SheetHeader>
+
+                        {/* Suggestions Section */}
+                        <div>
+                            <h3 className="text-sm font-bold mb-2">智能建議</h3>
+                            <ul className="list-disc list-inside">
+                                <li>建議 1</li>
+                                <li>建議 2</li>
+                                <li>建議 3</li>
+                            </ul>
+                        </div>
+
+                        {/* Chat Interface Section */}
+                        <div>
+                            <h3 className="text-sm font-bold mt-4 mb-2">與 AI 對話</h3>
+                            <div className="h-48 p-2 border rounded-md bg-stone-50 overflow-y-auto mb-2"></div>
+                            <div className="flex items-center gap-2">
+                                <Input type="text" placeholder="Ask AI..." className="flex-1 text-sm" />
+                                <Button size="sm">提問</Button>
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
             </div>
 
             <div className="flex-1 overflow-hidden relative">
@@ -218,6 +260,35 @@ export function SplitEditor({ note }: { note: Note }) {
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {content}
                             </ReactMarkdown>
+                        </div>
+                    </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="edit" className="h-full m-0 p-0 border-0">
+                     <Textarea 
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        className="w-full h-full resize-none p-6 font-mono text-sm border-0 focus-visible:ring-0 rounded-none leading-relaxed text-stone-700 bg-stone-50/20"
+                        spellCheck={false}
+                     />
+                </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+}
+
+                <TabsContent value="preview" className="h-full m-0 p-0 border-0">
+                    <ScrollArea className="h-full w-full">
+                        <div className="prose prose-stone prose-sm max-w-none p-8 font-serif prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:max-h-[600px] prose-img:w-auto prose-hr:my-8">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {content}
+                            </ReactMarkdown>
+                        </div>
+                    </ScrollArea>
+                </TabsContent>
                         </div>
                     </ScrollArea>
                 </TabsContent>

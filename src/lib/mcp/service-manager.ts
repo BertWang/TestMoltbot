@@ -21,7 +21,7 @@ import { RateLimiter, RateLimitError } from './rate-limiter';
 
 // 導入所有服務客戶端
 import { BraveSearchClient } from './services/brave-search-client';
-import { GiBaseMCPServiceClientbClient } from './services/github-client';
+import { GitHubClient } from './services/github-client';
 import { SlackClient } from './services/slack-client';
 import { FilesystemClient } from './services/filesystem-client';
 import { SQLiteClient } from './services/sqlite-client';
@@ -197,7 +197,7 @@ export class MCPServiceManager extends EventEmitter {
       if (instance.client) {
         await instance.client.connect(instance.config);
       }
-disconnect(serviceId);
+      await this.disconnect(serviceId);
       await this.connect(serviceId);
     }
 

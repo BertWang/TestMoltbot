@@ -37,7 +37,7 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
   const [activeTab, setActiveTab] = useState("suggestions");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+  const [selectedFunction, setSelectedFunction] = useState<string | undefined>(undefined);
   const [deepThinkEnabled, setDeepThinkEnabled] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [streamEnabled, setStreamEnabled] = useState(true);
@@ -368,9 +368,9 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
             deepThinkEnabled={deepThinkEnabled}
             ttsEnabled={ttsEnabled}
             streamEnabled={streamEnabled}
-            onDeepThinkChange={setDeepThinkEnabled}
-            onTtsChange={setTtsEnabled}
-            onStreamChange={setStreamEnabled}
+            onToggleDeepThink={setDeepThinkEnabled}
+            onToggleTTS={setTtsEnabled}
+            onToggleStream={setStreamEnabled}
           />
 
           {/* 錯誤提示 */}
@@ -448,8 +448,8 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
                                 ul: ({ node, ...props }) => <ul className="text-sm list-disc list-inside space-y-1 my-2" {...props} />,
                                 ol: ({ node, ...props }) => <ol className="text-sm list-decimal list-inside space-y-1 my-2" {...props} />,
                                 li: ({ node, ...props }) => <li className="text-sm leading-relaxed" {...props} />,
-                                code: ({ node, inline, ...props }) =>
-                                  inline ? (
+                                code: ({ node, inline: _inline, ...props }: any) =>
+                                  _inline ? (
                                     <code className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />
                                   ) : (
                                     <code className="bg-stone-100 text-stone-800 p-2 rounded block text-xs font-mono overflow-x-auto my-2" {...props} />
@@ -527,8 +527,7 @@ export function NoteAIAssistant({ noteId }: { noteId: string }) {
 
           {/* 新增：MCP 服務器菜單 */}
           <MCPMenu
-            enabledServers={enabledMCPServers}
-            onToggleServer={(serverId) => {
+            onSelectServer={(serverId) => {
               setEnabledMCPServers((prev) =>
                 prev.includes(serverId)
                   ? prev.filter((s) => s !== serverId)

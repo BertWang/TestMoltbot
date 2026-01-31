@@ -280,3 +280,40 @@ model MCPCache {
   @@index([expiresAt])
   @@index([serviceName])
 }
+
+// 10. MCP 服務註冊表 (MCP Service Registry)
+// 市場上所有可用的 MCP 服務定義
+model MCPServiceRegistry {
+  id              String   @id @default(cuid())
+  name            String   @unique           // 唯一標識符 (openclaw, brave_search 等)
+  displayName     String                     // 顯示名稱
+  description     String                     // 詳細描述
+  category        String                     // 服務類別 (search, analysis, integration, automation)
+  type            String                     // 服務類型 (openclaw, brave, github, slack, notion 等)
+  version         String   @default("1.0.0") // 版本號
+  logo            String?                    // Logo URL
+  
+  // 安裝統計
+  totalInstalls   Int      @default(0)       // 總安裝數
+  rating          Float?                     // 評分 (0-5)
+  reviews         Int      @default(0)       // 評論數
+  
+  // 配置要求 (JSON 格式)
+  requiredFields  String?                    // 必需字段列表
+  optionalFields  String?                    // 可選字段列表
+  
+  // 文檔和資源
+  documentation  String?                     // 文檔 URL
+  homepage       String?                     // 主頁 URL
+  repositoryUrl  String?                     // Git 倉庫 URL
+  
+  // 元數據
+  isActive       Boolean  @default(true)     // 是否活躍
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([category])
+  @@index([type])
+  @@index([name])
+  @@index([isActive])
+}

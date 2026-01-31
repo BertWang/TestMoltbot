@@ -3,13 +3,14 @@
  * 支持多個 AI 提供商的抽象層
  */
 
-export type AIProviderType = "gemini" | "openai" | "azure" | "claude" | "custom";
+export type AIProviderType = "gemini" | "openai" | "azure" | "googleVision" | "claude" | "custom";
 
 export interface AIConfig {
   provider: AIProviderType;
   apiKey: string;
   modelName: string;
   baseUrl?: string; // 用於自定義端點
+  endpoint?: string; // Azure/Google Vision 端點
   config?: Record<string, any>; // 提供商特定配置
 }
 

@@ -5,6 +5,8 @@
 import { AIProviderInterface, AIConfig, AIProviderType } from "./types";
 import { GeminiProvider } from "./providers/gemini";
 import { OpenAIProvider } from "./providers/openai";
+import { AzureProvider } from "./providers/azure";
+import { GoogleVisionProvider } from "./providers/google-vision";
 
 export class AIProviderFactory {
   private static providers = new Map<string, AIProviderInterface>();
@@ -36,8 +38,17 @@ export class AIProviderFactory {
         provider = new OpenAIProvider(config);
         break;
       case "azure":
-        // 待實現 Azure OpenAI 提供商
-        throw new Error("Azure provider not yet implemented");
+        if (!config.endpoint || !config.apiKey) {
+          throw new Error("Azure provider requires endpoint and apiKey");
+        }
+        provider = new AzureProvider(config.endpoint, config.apiKey);
+        break;
+      case "googleVision":
+        if (!config.apiKey) {
+          throw new Error("Google Cloud Vision provider requires apiKey");
+        }
+        provider = new GoogleVisionProvider(config.apiKey);
+        break;
       case "claude":
         // 待實現 Anthropic Claude 提供商
         throw new Error("Claude provider not yet implemented");

@@ -38,6 +38,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOpenClawAnalysis } from "@/hooks/use-openclaw-analysis";
 import { ConfigPresetsManager } from "@/components/config-presets-manager";
+import { OCRProviderManagement } from "@/components/ocr-provider-management";
 
 interface AdminSettings {
   aiProvider: string;
@@ -227,7 +228,7 @@ export function SettingsWizard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             <span className="hidden sm:inline">概覽</span>
@@ -235,6 +236,10 @@ export function SettingsWizard() {
           <TabsTrigger value="ai" className="flex items-center gap-2">
             <Zap className="w-4 h-4" />
             <span className="hidden sm:inline">AI 設定</span>
+          </TabsTrigger>
+          <TabsTrigger value="ocr" className="flex items-center gap-2">
+            <Network className="w-4 h-4" />
+            <span className="hidden sm:inline">OCR</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Network className="w-4 h-4" />
@@ -420,6 +425,11 @@ export function SettingsWizard() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* OCR 提供商 Tab */}
+        <TabsContent value="ocr" className="space-y-4">
+          <OCRProviderManagement />
         </TabsContent>
 
         {/* 整合 Tab */}

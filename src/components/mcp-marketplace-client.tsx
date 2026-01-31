@@ -67,11 +67,26 @@ export function MCPMarketplaceClient() {
   const [loading, setLoading] = useState(true);
   const [installing, setInstalling] = useState<Set<string>>(new Set());
   const [selectedService, setSelectedService] = useState<MarketplaceService | null>(null);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
+  const [testingServices, setTestingServices] = useState<Set<string>>(new Set());
 
   // 加載市場數據
   useEffect(() => {
     loadMarketplace();
   }, [selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    if (selectedService) {
+      const initialValues: Record<string, string> = {};
+      Object.keys(selectedService.requiredFields || {}).forEach((field) => {
+        initialValues[field] = "";
+      });
+      Object.keys(selectedService.optionalFields || {}).forEach((field) => {
+        if (!(field in initialValues)) initialValues[field] = "";
+      });
+      setConfigValues(initialValues);
+    }
+  }, [selectedService]);
 
   const loadMarketplace = async () => {
     setLoading(true);
@@ -126,7 +141,7 @@ export function MCPMarketplaceClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           registryId: service.id,
-          config: {},
+          config: configValues,
         }),
       });
 
@@ -165,6 +180,40 @@ export function MCPMarketplaceClient() {
     }
   };
 
+  const handleTestService = async (serviceId: string) => {
+    setTestingServices((prev) => new Set(prev).add(serviceId));
+    try {
+      const response = await fetch(`/api/mcp/${serviceId}/test`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "測試失敗");
+      }
+
+      toast.success("測試完成", { description: data.message });
+      setInstalledServices((prev) =>
+        prev.map((service) =>
+          service.id === serviceId
+            ? {
+                ...service,
+                lastTestStatus: data.testStatus,
+                lastTestedAt: data.timestamp,
+              }
+            : service
+        )
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "測試失敗");
+    } finally {
+      setTestingServices((prev) => {
+        const next = new Set(prev);
+        next.delete(serviceId);
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 安裝確認對話框 */}
@@ -185,20 +234,47 @@ export function MCPMarketplaceClient() {
           {selectedService && (
             <div className="space-y-4">
               {Object.keys(selectedService.requiredFields).length > 0 && (
-                <div>
-                  <h4 className="font-medium text-sm mb-2">
-                    必填配置
-                  </h4>
-                  <div className="space-y-2 text-xs text-stone-600">
-                    {Object.keys(selectedService.requiredFields).map(
-                      (field) => (
-                        <div key={field} className="flex items-center gap-2">
-                          <AlertCircle className="h-3 w-3 text-orange-600" />
-                          {field}
-                        </div>
-                      )
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">必填配置</h4>
+                  {Object.keys(selectedService.requiredFields).map((field) => (
+                    <div key={field} className="space-y-1">
+                      <label className="text-xs text-stone-600 flex items-center gap-2">
+                        <AlertCircle className="h-3 w-3 text-orange-600" />
+                        {field}
+                      </label>
+                      <Input
+                        value={configValues[field] || ""}
+                        onChange={(e) =>
+                          setConfigValues((prev) => ({
+                            ...prev,
+                            [field]: e.target.value,
+                          }))
+                        }
+                        placeholder={`輸入 ${field}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {Object.keys(selectedService.optionalFields).length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">選填配置</h4>
+                  {Object.keys(selectedService.optionalFields).map((field) => (
+                    <div key={field} className="space-y-1">
+                      <label className="text-xs text-stone-600">{field}</label>
+                      <Input
+                        value={configValues[field] || ""}
+                        onChange={(e) =>
+                          setConfigValues((prev) => ({
+                            ...prev,
+                            [field]: e.target.value,
+                          }))
+                        }
+                        placeholder={`輸入 ${field}`}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -208,7 +284,12 @@ export function MCPMarketplaceClient() {
                   setSelectedService(null);
                 }}
                 className="w-full"
-                disabled={installing.has(selectedService.id)}
+                disabled={
+                  installing.has(selectedService.id) ||
+                  Object.keys(selectedService.requiredFields).some(
+                    (field) => !configValues[field]
+                  )
+                }
               >
                 {installing.has(selectedService.id) ? (
                   <>
@@ -419,6 +500,30 @@ export function MCPMarketplaceClient() {
                       </div>
                     </div>
                   </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-stone-500">
+                        {service.lastTestedAt
+                          ? `上次測試：${new Date(service.lastTestedAt).toLocaleString()}`
+                          : "尚未測試"}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleTestService(service.id)}
+                        disabled={testingServices.has(service.id)}
+                      >
+                        {testingServices.has(service.id) ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            測試中...
+                          </>
+                        ) : (
+                          "測試連線"
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>

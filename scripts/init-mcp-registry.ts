@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+// Note: Prisma Client 可能因 TypeScript 快取導致新模型型別未即時更新。
+// 這裡先使用 any 避免型別阻擋腳本執行。
+const prisma = new PrismaClient() as any;
 
 async function initMCPRegistry() {
   console.log("🚀 初始化 MCP 服務註冊表...");

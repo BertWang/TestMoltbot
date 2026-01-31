@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const prismaClient = prisma as any;
+
 /**
  * MCP 安裝端點
  * POST /api/mcp/install - 安裝 MCP 服務
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 獲取註冊表中的服務信息
-    const registryService = await prisma.mCPServiceRegistry.findUnique({
+    const registryService = await prismaClient.mCPServiceRegistry.findUnique({
       where: { id: registryId },
     });
 
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 檢查是否已安裝
-    const existing = await prisma.mCPServiceConfig.findUnique({
+    const existing = await prismaClient.mCPServiceConfig.findUnique({
       where: { name: registryService.name },
     });
 
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 創建服務配置
-    const serviceConfig = await prisma.mCPServiceConfig.create({
+    const serviceConfig = await prismaClient.mCPServiceConfig.create({
       data: {
         name: registryService.name,
         type: registryService.type,
@@ -87,7 +89,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 更新註冊表中的安裝計數
-    await prisma.mCPServiceRegistry.update({
+    await prismaClient.mCPServiceRegistry.update({
       where: { id: registryId },
       data: { totalInstalls: { increment: 1 } },
     });

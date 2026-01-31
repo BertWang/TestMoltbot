@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { useOpenClawAnalysis } from "@/hooks/use-openclaw-analysis";
 import { ConfigPresetsManager } from "@/components/config-presets-manager";
 import { OCRProviderManagement } from "@/components/ocr-provider-management";
+import { MCPMarketplaceClient } from "@/components/mcp-marketplace-client";
 
 interface AdminSettings {
   aiProvider: string;
@@ -228,7 +229,7 @@ export function SettingsWizard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             <span className="hidden sm:inline">概覽</span>
@@ -240,6 +241,10 @@ export function SettingsWizard() {
           <TabsTrigger value="ocr" className="flex items-center gap-2">
             <Network className="w-4 h-4" />
             <span className="hidden sm:inline">OCR</span>
+          </TabsTrigger>
+          <TabsTrigger value="mcp" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            <span className="hidden sm:inline">MCP</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Network className="w-4 h-4" />
@@ -430,6 +435,21 @@ export function SettingsWizard() {
         {/* OCR 提供商 Tab */}
         <TabsContent value="ocr" className="space-y-4">
           <OCRProviderManagement />
+        </TabsContent>
+
+        {/* MCP 市場 Tab */}
+        <TabsContent value="mcp" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>MCP 市場</CardTitle>
+              <CardDescription>
+                瀏覽和安裝 Model Context Protocol 服務
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MCPMarketplaceClient />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* 整合 Tab */}
